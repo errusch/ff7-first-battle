@@ -5,5 +5,6 @@ dist
 _artifacts
 _artifacts_fix
 _artifacts_fix2
+_artifacts_fix3
 _references
 tsconfig.tsbuildinfo

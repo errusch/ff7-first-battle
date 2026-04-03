@@ -1155,131 +1155,79 @@ function App() {
           </div>
         </section>
 
-        <section className="sidebar-column">
-          <div className="info-card party-card">
-            <div className="card-header">
-              <p className="eyebrow">Allied status</p>
-              <h3>Avalanche party</h3>
-            </div>
-            <div className="status-stack">
-              {party.map((ally) => (
-                <div key={ally.id} className={`status-panel ${activeActorId === ally.id ? 'active' : ''} ${!ally.alive ? 'down' : ''}`}>
-                  <div className="status-title-row">
-                    <div>
-                      <strong>{ally.name}</strong>
-                      <span>{ally.subtitle}</span>
-                    </div>
-                    <span className="status-pill">{!ally.alive ? 'KO' : ally.defending ? 'Defending' : ally.atb >= 100 ? 'Ready' : 'Charging'}</span>
-                  </div>
-                  <div className="numbers">
-                    <div><label>HP</label><span>{ally.hp}/{ally.maxHp}</span></div>
-                    <div><label>MP</label><span>{ally.mp}/{ally.maxMp}</span></div>
-                  </div>
-                  <div className="meter-row">
-                    <div className="meter-label">ATB</div>
-                    <div className="meter"><div style={{ width: `${ally.atb}%` }} /></div>
-                  </div>
-                </div>
-              ))}
-            </div>
+        <section className="sidebar-column terminal-column">
+          <div className="terminal-module">
+            <div className="terminal-title">ALLY_FEED</div>
+            {party.map((ally) => (
+              <div key={ally.id} className={`terminal-line ${activeActorId === ally.id ? 'is-hot' : ''} ${!ally.alive ? 'is-dim' : ''}`}>
+                <span>{ally.name.toUpperCase()}</span>
+                <span>HP {ally.hp}/{ally.maxHp}</span>
+                <span>MP {ally.mp}/{ally.maxMp}</span>
+                <span>{!ally.alive ? 'KO' : ally.defending ? 'DEFEND' : ally.atb >= 100 ? 'READY' : 'CHARGE'}</span>
+              </div>
+            ))}
           </div>
 
-          <div className="info-card encounter-card">
-            <div className="card-header">
-              <p className="eyebrow">Encounter board</p>
-              <h3>Shinra security</h3>
-            </div>
-            <div className="enemy-stack">
-              {enemies.map((enemy, index) => (
-                <button
-                  key={enemy.id}
-                  className={`enemy-row ${currentTarget?.id === enemy.id && menuLayer === 'target' ? 'targeted' : ''} ${!enemy.alive ? 'down' : ''}`}
-                  onClick={() => {
-                    if (menuLayer === 'target' && enemy.alive) {
-                      setTargetIndex(index)
-                      void confirmSelection()
-                    }
-                  }}
-                >
-                  <div>
-                    <strong>{enemy.name}</strong>
-                    <span>{enemy.subtitle}</span>
-                  </div>
-                  <div className="enemy-meta">
-                    <span>{enemy.alive ? `${enemy.hp} HP` : 'Down'}</span>
-                    <div className="meter compact"><div style={{ width: `${enemy.atb}%` }} /></div>
-                  </div>
-                </button>
-              ))}
-            </div>
+          <div className="terminal-module">
+            <div className="terminal-title">HOSTILES</div>
+            {enemies.map((enemy, index) => (
+              <button
+                key={enemy.id}
+                className={`terminal-line terminal-button ${currentTarget?.id === enemy.id && menuLayer === 'target' ? 'is-hot' : ''} ${!enemy.alive ? 'is-dim' : ''}`}
+                onClick={() => {
+                  if (menuLayer === 'target' && enemy.alive) {
+                    setTargetIndex(index)
+                    void confirmSelection()
+                  }
+                }}
+              >
+                <span>{enemy.name.toUpperCase()}</span>
+                <span>{enemy.subtitle.toUpperCase()}</span>
+                <span>{enemy.alive ? `${enemy.hp}HP` : 'DOWN'}</span>
+              </button>
+            ))}
           </div>
 
-          <div className="info-card command-card">
-            <div className="card-header">
-              <p className="eyebrow">Command palette</p>
-              <h3>{activeActor ? `${activeActor.name}'s turn` : 'Wait mode'}</h3>
-            </div>
+          <div className="terminal-module">
+            <div className="terminal-title">COMMAND_BUFFER // {activeActor ? activeActor.name.toUpperCase() : 'WAIT'}</div>
             {phase === 'battle' && activeActor ? (
               <>
-                {menuLayer === 'root' && (
-                  <div className="menu-list">
-                    {rootMenu.map((option, index) => (
-                      <button key={option.id} className={`menu-item ${rootIndex === index ? 'selected' : ''}`} onClick={() => { setRootIndex(index); void confirmSelection() }}>
-                        <span>{option.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {menuLayer === 'magic' && (
-                  <div className="menu-list">
-                    {activeActor.spellbook.map((spell, index) => (
-                      <button key={spell.id} className={`menu-item ${magicIndex === index ? 'selected' : ''}`} onClick={() => { setMagicIndex(index); void confirmSelection() }}>
-                        <span>{spell.name}</span>
-                        <small>{spell.cost} MP</small>
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {menuLayer === 'item' && (
-                  <div className="menu-list">
-                    {inventory.map((item, index) => (
-                      <button key={item.id} disabled={item.amount <= 0} className={`menu-item ${itemIndex === index ? 'selected' : ''}`} onClick={() => { setItemIndex(index); void confirmSelection() }}>
-                        <span>{item.name}</span>
-                        <small>x{item.amount}</small>
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {menuLayer === 'target' && (
-                  <div className="menu-list">
-                    {targetPool.map((combatant, index) => (
-                      <button key={combatant.id} className={`menu-item ${targetIndex === index ? 'selected' : ''}`} onClick={() => { setTargetIndex(index); void confirmSelection() }}>
-                        <span>{combatant.name}</span>
-                        <small>{combatant.hp} HP</small>
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <div className="input-hint">Keyboard: ↑ ↓ to navigate · Enter to confirm · Esc to go back</div>
+                {menuLayer === 'root' && rootMenu.map((option, index) => (
+                  <button key={option.id} className={`terminal-line terminal-button ${rootIndex === index ? 'is-hot' : ''}`} onClick={() => { setRootIndex(index); void confirmSelection() }}>
+                    <span>{option.label.toUpperCase()}</span>
+                  </button>
+                ))}
+                {menuLayer === 'magic' && activeActor.spellbook.map((spell, index) => (
+                  <button key={spell.id} className={`terminal-line terminal-button ${magicIndex === index ? 'is-hot' : ''}`} onClick={() => { setMagicIndex(index); void confirmSelection() }}>
+                    <span>{spell.name.toUpperCase()}</span>
+                    <span>{spell.cost} MP</span>
+                  </button>
+                ))}
+                {menuLayer === 'item' && inventory.map((item, index) => (
+                  <button key={item.id} disabled={item.amount <= 0} className={`terminal-line terminal-button ${itemIndex === index ? 'is-hot' : ''}`} onClick={() => { setItemIndex(index); void confirmSelection() }}>
+                    <span>{item.name.toUpperCase()}</span>
+                    <span>x{item.amount}</span>
+                  </button>
+                ))}
+                {menuLayer === 'target' && targetPool.map((combatant, index) => (
+                  <button key={combatant.id} className={`terminal-line terminal-button ${targetIndex === index ? 'is-hot' : ''}`} onClick={() => { setTargetIndex(index); void confirmSelection() }}>
+                    <span>{combatant.name.toUpperCase()}</span>
+                    <span>{combatant.hp}HP</span>
+                  </button>
+                ))}
+                <div className="terminal-hint">↑↓ NAV // ENTER CONFIRM // ESC BACK</div>
               </>
             ) : (
-              <p className="command-waiting">ATB charges in real time. When a party member is ready, combat pauses for your command.</p>
+              <div className="terminal-hint">ATB CHARGES IN REAL TIME. COMMAND INPUT PAUSES ON READY.</div>
             )}
           </div>
 
-          <div className="info-card log-card">
-            <div className="card-header">
-              <p className="eyebrow">Battle log</p>
-              <h3>Field notes</h3>
-            </div>
-            <div className="log-bubble">
-              {logLines.map((line, index) => (
-                <span key={`${line}-${index}`}>{line}</span>
-              ))}
-            </div>
-            <div className="log-history">
+          <div className="terminal-module">
+            <div className="terminal-title">FIELD_NOTES</div>
+            <div className="terminal-log-major">{logLines.map((line, index) => <span key={`${line}-${index}`}>{line}</span>)}</div>
+            <div className="terminal-log-minor">
               {battleLog.slice(1, 4).map((entry, index) => (
-                <div key={`${entry}-${index}`} className="log-history-row">{entry}</div>
+                <div key={`${entry}-${index}`} className="terminal-line is-minor">{entry.toUpperCase()}</div>
               ))}
             </div>
           </div>
