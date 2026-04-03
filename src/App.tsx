@@ -336,16 +336,21 @@ function PretextBlock({ text, maxWidth, className, font = FONT, lineHeight = 20 
 }
 
 function RoutedBattleStage({ title, narrative, allies, enemies, highlightedTargetId, activeActorId }: { title: string; narrative: string; allies: Combatant[]; enemies: Combatant[]; highlightedTargetId: string | null; activeActorId: string | null }) {
-  const routedLines = useMemo(() => {
-    const prepared = prepareWithSegments(narrative, '600 18px Georgia')
+  const fillerWords = useMemo(
+    () => ['MIDGAR', 'MAKO', 'AVALANCHE', 'REACTOR', 'SHINRA', 'BUSTER', 'BOLT', 'LIMIT', 'QUEUE', 'SECTOR', 'GUARD', 'ATB', 'STEEL', 'RUSH', 'STATIC', 'SLUMS'],
+    [],
+  )
+
+  const routedNarrative = useMemo(() => {
+    const prepared = prepareWithSegments(narrative, '700 20px "Courier New"')
     const rows: { text: string; x: number; y: number }[] = []
     let cursor = { segmentIndex: 0, graphemeIndex: 0 }
-    let y = 28
+    let y = 34
     while (true) {
-      const obstacleLeft = y >= 30 && y <= 170
-      const obstacleRight = y >= 76 && y <= 216
-      const startX = obstacleLeft ? 270 : 34
-      const maxWidth = 760 - (obstacleLeft ? 250 : 0) - (obstacleRight ? 220 : 0)
+      const leftObstacle = y >= 76 && y <= 176
+      const rightObstacle = y >= 132 && y <= 236
+      const startX = leftObstacle ? 230 : 32
+      const maxWidth = 760 - (leftObstacle ? 210 : 0) - (rightObstacle ? 210 : 0)
       const line = layoutNextLine(prepared, cursor, maxWidth)
       if (!line) break
       rows.push({ text: line.text, x: startX, y })
@@ -355,53 +360,89 @@ function RoutedBattleStage({ title, narrative, allies, enemies, highlightedTarge
     return rows
   }, [narrative])
 
+  const wordBricks = useMemo(() => {
+    const liveEnemies = enemies.filter((enemy) => enemy.alive)
+    if (liveEnemies.length > 0) {
+      return liveEnemies.flatMap((enemy, enemyIndex) => {
+        const base = enemy.name.replace(/[^A-Za-z ]/g, ' ').split(/\s+/).filter(Boolean)
+        const words = [...base, enemy.subtitle, `${enemy.hp}HP`, enemyIndex === 0 ? 'MACHINE' : 'BURST']
+        return words.map((word, index) => ({
+          id: `${enemy.id}-${word}-${index}`,
+          text: word.toUpperCase(),
+          enemyId: enemy.id,
+          row: enemyIndex,
+          index,
+        }))
+      })
+    }
+    return fillerWords.map((word, index) => ({ id: `${word}-${index}`, text: word, enemyId: null, row: Math.floor(index / 4), index }))
+  }, [enemies, fillerWords])
+
   return (
-    <div className="pretext-stage">
-      <div className="pretext-stage-header">
-        <PretextBlock text={title} maxWidth={300} className="pretext-stage-title" font="700 28px Georgia" lineHeight={28} />
-        <div className="pretext-stage-chip">Rendered through pretext line layout</div>
-      </div>
-      <div className="pretext-stage-surface">
-        <svg viewBox="0 0 960 540" className="pretext-stage-svg" aria-hidden="true">
-          <defs>
-            <linearGradient id="bgGlow" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#25201b" />
-              <stop offset="55%" stopColor="#1a1b1c" />
-              <stop offset="100%" stopColor="#342b24" />
-            </linearGradient>
-          </defs>
-          <rect x="0" y="0" width="960" height="540" rx="28" fill="url(#bgGlow)" />
-          <rect x="34" y="250" width="892" height="220" rx="18" fill="rgba(239,228,207,0.04)" stroke="rgba(239,228,207,0.08)" />
-          {Array.from({ length: 10 }).map((_, index) => (
-            <line key={index} x1="44" y1={270 + index * 20} x2="920" y2={246 + index * 18} stroke="rgba(239,228,207,0.12)" strokeWidth="2" />
-          ))}
-          {rowsToSvg(routedLines)}
-        </svg>
-        <div className="stage-character ally-card cloud-card">
-          <div className={`portrait portrait-cloud ${activeActorId === 'cloud' ? 'is-active' : ''}`} />
-          <PretextBlock text={`${allies[0]?.name ?? 'Cloud'} — ${allies[0]?.subtitle ?? ''}`} maxWidth={180} className="stage-card-copy" />
-        </div>
-        <div className="stage-character ally-card barret-card">
-          <div className={`portrait portrait-barret ${activeActorId === 'barret' ? 'is-active' : ''}`} />
-          <PretextBlock text={`${allies[1]?.name ?? 'Barret'} — ${allies[1]?.subtitle ?? ''}`} maxWidth={180} className="stage-card-copy" />
-        </div>
-        {enemies.map((enemy, index) => (
-          <div key={enemy.id} className={`stage-character enemy-card enemy-card-${index} ${highlightedTargetId === enemy.id ? 'is-targeted' : ''} ${!enemy.alive ? 'is-down' : ''}`}>
-            <div className={`portrait portrait-mp portrait-mp-${index + 1}`} />
-            <PretextBlock text={`${enemy.name} — ${enemy.alive ? `${enemy.hp} HP` : 'Down'}`} maxWidth={180} className="stage-card-copy" />
+    <div className="breaker-stage">
+      <div className="breaker-screen">
+        <div className="breaker-topbar">
+          <div>
+            <div className="breaker-title">PRETEXT BATTLE // FF7 FIRST STRIKE</div>
+            <div className="breaker-subtitle">Break the enemy language, hold the line, survive the reactor sweep.</div>
           </div>
-        ))}
+          <div className="breaker-hud">
+            <span>SCORE {aliveScore(enemies)}</span>
+            <span>LIVES {allies.filter((ally) => ally.alive).length}</span>
+            <span>LEVEL 1</span>
+          </div>
+        </div>
+
+        <div className="breaker-playfield">
+          <div className="breaker-noise" />
+          <div className="breaker-routed-copy">
+            {routedNarrative.map((line, index) => (
+              <span key={`${line.text}-${index}`} className="breaker-copy-line" style={{ left: line.x, top: line.y }}>{line.text}</span>
+            ))}
+          </div>
+
+          <div className="breaker-words">
+            {wordBricks.map((brick) => (
+              <div
+                key={brick.id}
+                className={`word-brick ${brick.enemyId && highlightedTargetId === brick.enemyId ? 'is-target' : ''} ${brick.enemyId ? '' : 'is-filler'}`}
+                style={{
+                  left: 96 + brick.index * 118 + brick.row * 18,
+                  top: 112 + brick.row * 58 + (brick.index % 2) * 6,
+                }}
+              >
+                {brick.text}
+              </div>
+            ))}
+          </div>
+
+          <div className={`fighter-chip cloud-chip ${activeActorId === 'cloud' ? 'is-active' : ''}`}>CLOUD // {allies[0]?.hp ?? 0}HP</div>
+          <div className={`fighter-chip barret-chip ${activeActorId === 'barret' ? 'is-active' : ''}`}>BARRET // {allies[1]?.hp ?? 0}HP</div>
+          {enemies.map((enemy, index) => (
+            <div key={enemy.id} className={`fighter-chip enemy-chip enemy-chip-${index} ${highlightedTargetId === enemy.id ? 'is-target' : ''} ${!enemy.alive ? 'is-down' : ''}`}>
+              {enemy.name.toUpperCase()} // {enemy.alive ? `${enemy.hp}HP` : 'DOWN'}
+            </div>
+          ))}
+
+          <div className="breaker-callout">
+            <span className="breaker-callout-title">{title.toUpperCase()}</span>
+            <span>Press Start, then route commands through text.</span>
+          </div>
+
+          <div className="breaker-footer">
+            <span>MOVE: mouse / arrows</span>
+            <span>CONFIRM: enter / click</span>
+            <span>BACK: esc</span>
+            <span>TEXT IS THE PLAYFIELD</span>
+          </div>
+        </div>
       </div>
     </div>
   )
 }
 
-function rowsToSvg(rows: { text: string; x: number; y: number }[]) {
-  return rows.map((row, index) => (
-    <text key={`${row.text}-${index}`} x={row.x} y={row.y} fill="#efe4cf" fontFamily="Georgia, serif" fontWeight="600" fontSize="18">
-      {row.text}
-    </text>
-  ))
+function aliveScore(enemies: Combatant[]) {
+  return enemies.filter((enemy) => !enemy.alive).length * 800 + enemies.reduce((sum, enemy) => sum + (enemy.maxHp - enemy.hp), 0)
 }
 
 function App() {
@@ -1056,7 +1097,7 @@ function App() {
         <div>
           <p className="eyebrow">Interactive battle remake</p>
           <h1>Final Fantasy VII — First Battle</h1>
-          <p className="subtitle">A playable browser encounter rebuilt with a warm Pretext-inspired interface and original audio recreation.</p>
+          <p className="subtitle">A playable browser encounter rebuilt as a text-native pretext-style arcade battle, with original recreated audio.</p>
         </div>
         <div className="control-cluster">
           <button className="mute-toggle" onClick={() => setAudioEnabled((prev) => !prev)}>
